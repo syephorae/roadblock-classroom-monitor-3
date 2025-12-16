@@ -18,14 +18,14 @@ import {
 } from '@/components/ui/table';
 
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, getDocs } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useFirebase } from '@/firebase/provider';
 import { Student, Class } from '@/lib/definitions';
 import { getColumns } from './columns';
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// --- DataTable component implementation (No changes needed here) ---
+// --- DataTable component (no changes) ---
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
@@ -68,7 +68,7 @@ function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValu
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">
-                No students found.
+                No students found in your classes.
               </TableCell>
             </TableRow>
           )}
@@ -78,61 +78,90 @@ function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValu
   );
 }
 
-// --- RosterStudentsTable component (Modified to show all students) ---
+// --- RosterStudentsTable component (Refactored to fetch students by teacher's classes) ---
 
-// Props are no longer needed as we fetch all students.
 interface RosterStudentsTableProps {}
 
 export function RosterStudentsTable({}: RosterStudentsTableProps) {
-  const firestore = useFirestore();
+  const { firestore, user } = useFirebase();
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // The columns still need the class data to resolve class names.
   const columns = useMemo(() => getColumns(classes), [classes]);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!firestore) {
+      if (!firestore || !user) {
         setLoading(false);
         return;
       }
 
+      const teacherId = user.uid;
       setLoading(true);
       setError(null);
 
       try {
-        // 1. Fetch all classes (for mapping class ID to class name in the table).
-        const classesQuery = query(collection(firestore, 'classes'));
+        // 1. Fetch all classes taught by the current teacher.
+        console.log(`DEBUG: Fetching classes for teacher: ${teacherId}`);
+        const classesQuery = query(collection(firestore, 'classes'), where('teacherId', '==', teacherId));
         const classesSnapshot = await getDocs(classesQuery);
-        const classesData = classesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Class));
-        setClasses(classesData);
+        
+        const teacherClasses = classesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Class));
+        setClasses(teacherClasses); // Set classes state for the columns.
 
-        // 2. Fetch ALL students from the 'students' collection with a single query.
-        const studentsQuery = query(collection(firestore, 'students'));
-        const studentsSnapshot = await getDocs(studentsQuery);
-        const studentData = studentsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Student));
+        if (teacherClasses.length === 0) {
+          console.log("DEBUG: No classes found for this teacher.");
+          setStudents([]); // No classes means no students.
+          setLoading(false);
+          return;
+        }
+
+        const classIds = teacherClasses.map(c => c.id);
+        console.log(`DEBUG: Found ${classIds.length} class IDs for this teacher.`);
+
+        // 2. Fetch all students who are in any of the teacher's classes.
+        // Handle Firestore's 30-item 'in' query limit by chunking classIds.
+        const studentData: Student[] = [];
+        const chunks: string[][] = [];
+
+        for (let i = 0; i < classIds.length; i += 30) {
+          chunks.push(classIds.slice(i, i + 30));
+        }
+
+        const fetchPromises = chunks.map(chunk =>
+          getDocs(query(collection(firestore, 'students'), where('classId', 'in', chunk)))
+        );
+
+        const querySnapshots = await Promise.all(fetchPromises);
+
+        for (const snapshot of querySnapshots) {
+          snapshot.forEach(doc => {
+            studentData.push({ ...doc.data(), id: doc.id } as Student);
+          });
+        }
+        
         setStudents(studentData);
+        console.log("DEBUG: Final student data state set:", studentData);
 
       } catch (err) {
-        console.error("--- DEBUG: All Students Table Fetch ERROR ---", err);
+        console.error("--- DEBUG: Roster Table Fetch ERROR ---", err);
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-        setError(`Failed to load student data: ${errorMessage}`);
+        setError(`Failed to load roster data: ${errorMessage}`);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [firestore]); // The effect now only depends on the firestore instance.
+  }, [firestore, user]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="mr-2 h-8 w-8 animate-spin" />
-        <span>Loading all students...</span>
+        <span>Loading your students...</span>
       </div>
     );
   }
@@ -142,9 +171,10 @@ export function RosterStudentsTable({}: RosterStudentsTableProps) {
       <Alert variant="destructive">
         <AlertTitle>Error</AlertTitle>
         <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
+      </Alert>);
   }
 
+  
   return <DataTable columns={columns} data={students} />;
+
 }
