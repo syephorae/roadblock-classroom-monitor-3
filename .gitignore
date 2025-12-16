@@ -1,0 +1,27 @@
+# Node dependencies
+node_modules/
+
+
+# Firebase local files
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+
+# Build / output folders
+dist/
+build/
+
+# OS / IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.next/
+.idx/

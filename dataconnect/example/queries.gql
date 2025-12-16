@@ -1,0 +1,43 @@
+mutation CreateUser @auth(level: USER) {
+  user_insert(data: {
+    displayName: "New User",
+    email: "newuser@example.com",
+    role: "student",
+    createdAt_expr: "request.time",
+    id_expr: "uuidV4()"
+  })
+}
+
+query ListClassrooms @auth(level: USER) {
+  classrooms {
+    id
+    name
+    description
+  }
+}
+
+mutation UpdatePolicy($id: UUID!, $value: String!) @auth(level: USER) {
+  policy_update(
+    id: $id,
+    data: {
+      value: $value
+    }
+  )
+}
+
+query GetSession($id: UUID!) @auth(level: USER) {
+  session(id: $id) {
+    id
+    startTime
+    endTime
+    isActive
+    classroom {
+      id
+      name
+    }
+    teacher {
+      id
+      displayName
+    }
+  }
+}

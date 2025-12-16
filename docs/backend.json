@@ -1,0 +1,278 @@
+
+{
+  "entities": {
+    "Teacher": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Teacher",
+      "type": "object",
+      "description": "Represents a teacher using the monitoring system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the teacher entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The teacher's full name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The teacher's email address.",
+          "format": "email"
+        },
+        "school": {
+            "type": "string",
+            "description": "The name of the school the teacher belongs to."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email"
+      ]
+    },
+    "Student": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Student",
+      "type": "object",
+      "description": "Represents a student being monitored in the system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the student entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The student's full name."
+        },
+        "normalizedName": {
+          "type": "string",
+          "description": "The student's full name in lowercase for case-insensitive searching."
+        },
+        "robloxUsername": {
+          "type": "string",
+          "description": "The student's Roblox username."
+        },
+        "robloxUserId": {
+          "type": "string",
+          "description": "The student's unique Roblox User ID."
+        },
+        "quizScore": {
+          "type": "number",
+          "description": "The student's score on the quiz."
+        },
+        "quizCompletions": {
+          "type": "number",
+          "description": "The number of times the student has completed the quiz."
+        },
+        "progress": {
+          "type": "number",
+          "description": "The student's progress in the experiment module (0-100)."
+        },
+        "experimentCompletions": {
+          "type": "number",
+          "description": "The number of times the student has completed the experiment."
+        },
+        "timePlayed": {
+          "type": "number",
+          "description": "The total time played in minutes."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "normalizedName"
+      ]
+    },
+    "StudentRecord": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StudentRecord",
+      "type": "object",
+      "description": "Represents a snapshot of a student's progress and time played.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the student record entity."
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to Student. (Relationship: Student 1:N StudentRecord)"
+        },
+        "timePlayed": {
+          "type": "number",
+          "description": "The amount of time the student has played in the Roblox experience, in minutes."
+        },
+        "progress": {
+          "type": "number",
+          "description": "The student's progress in the Roblox experience. This could be a level, score, or other metric."
+        },
+        "quizScore": {
+          "type": "number",
+          "description": "The student's score on a quiz."
+        },
+        "quizCompletions": {
+          "type": "number",
+          "description": "The number of times the student has completed the quiz."
+        },
+        "experimentCompletions": {
+          "type": "number",
+          "description": "The number of times the student has completed the experiment."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp of when this record was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "studentId",
+        "timestamp"
+      ]
+    },
+    "TeacherStudent": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TeacherStudent",
+      "type": "object",
+      "description": "Represents the many-to-many relationship between teachers and students.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the teacher-student relationship."
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to Teacher. (Relationship: Teacher 1:N TeacherStudent)"
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to Student. (Relationship: Student 1:N TeacherStudent)"
+        }
+      },
+      "required": [
+        "id",
+        "teacherId",
+        "studentId"
+      ]
+    },
+    "School": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "School",
+      "type": "object",
+      "description": "Represents a school.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the school."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the school."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/teachers/{teacherId}",
+        "definition": {
+          "entityName": "Teacher",
+          "schema": {
+            "$ref": "#/backend/entities/Teacher"
+          },
+          "description": "Stores teacher profiles. Uses path-based ownership for authorization.  `teacherId` is the Firebase Auth UID.",
+          "params": [
+            {
+              "name": "teacherId",
+              "description": "The Firebase Auth UID of the teacher."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/students/{studentId}",
+        "definition": {
+          "entityName": "Student",
+          "schema": {
+            "$ref": "#/backend/entities/Student"
+          },
+          "description": "Stores student profiles.",
+          "params": [
+            {
+              "name": "studentId",
+              "description": "The unique identifier of the student."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/teachers/{teacherId}/students/{studentId}/records/{recordId}",
+        "definition": {
+          "entityName": "StudentRecord",
+          "schema": {
+            "$ref": "#/backend/entities/StudentRecord"
+          },
+          "description": "Stores student records. Nested under `/teachers/{teacherId}/students/{studentId}` for authorization independence (teacher owns the student records).",
+          "params": [
+            {
+              "name": "teacherId",
+              "description": "The Firebase Auth UID of the teacher."
+            },
+            {
+              "name": "studentId",
+              "description": "The unique identifier of the student."
+            },
+            {
+              "name": "recordId",
+              "description": "The unique identifier of the student record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/teacher_students/{teacherStudentId}",
+        "definition": {
+          "entityName": "TeacherStudent",
+          "schema": {
+            "$ref": "#/backend/entities/TeacherStudent"
+          },
+          "description": "Stores the many-to-many relationships between teachers and students. This allows to efficiently query the list of students for a given teacher.",
+          "params": [
+            {
+              "name": "teacherStudentId",
+              "description": "Unique identifier for the teacher-student relationship."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/schools/{schoolId}",
+        "definition": {
+          "entityName": "School",
+          "schema": {
+            "$ref": "#/backend/entities/School"
+          },
+          "description": "Stores school information.",
+          "params": [
+            {
+              "name": "schoolId",
+              "description": "The unique identifier of the school."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This Firestore data structure is designed to support the Roblox Classroom Monitor application, focusing on secure teacher authentication and efficient student progress tracking. The structure adheres to the principles of Authorization Independence, Structural Segregation, and Access Modeling.  \n\n**Authorization Independence:** Authorization is achieved through path-based ownership and denormalization. For example, student records are nested under the teacher's collection, eliminating the need for `get()` calls in security rules to verify teacher ownership. \n\n**Structural Segregation:**  The structure separates teacher profiles from student data and teacher-student relationships, ensuring that different data types with varying access requirements are stored in distinct collections. This simplifies security rules.\n\n**Access Modeling:** Path-based ownership is used for teacher and student data, ensuring clear ownership and simplifying access control. The `TeacherStudent` collection explicitly manages the many-to-many relationship, which is used for data retrieval in the UI.\n\n**QAPs Support:**\n*   **List Operations:** Secure list operations are supported by the segregated structure. Teachers can only list students associated with them via the `TeacherStudent` collection, and only access student records under their teacher ID.\n\nThis design prioritizes clarity, security, and scalability, making it easier to implement robust security rules and manage the application's data efficiently."
+  }
+}
