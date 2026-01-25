@@ -155,6 +155,7 @@ export async function addStudentsToClass(studentNames: string[], classId: string
     console.error('--- DEBUG: addStudentsToClass FAILED ---');
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
     console.error('Error Details:', error);
+    // probelm die sini tadi, lepas upload .. dia ada bgtau error line berapa?
     return { success: false, error: `Failed to process roster: ${errorMessage}` };
   }
 }
