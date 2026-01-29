@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "studio-4099736194-7143c"
-  }
+    "default": "studio-4099736194-7143c",
+    "kssmlab": "studio-4099736194-7143c"
+  },
+  "targets": {},
+  "etags": {}
 }

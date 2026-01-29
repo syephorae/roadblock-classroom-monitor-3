@@ -5,7 +5,6 @@ import type { Student, Class } from '@/lib/definitions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { RecommendationsButton } from './recommendations-button';
 
 // Helper function for smart name filtering
 const normalizeName = (name: string): string => {
@@ -50,7 +49,7 @@ export const getColumns = (classes: Class[]): ColumnDef<Student>[] => [
       return normalizedRowValue.includes(normalizedFilterValue);
     },
   },
-    {
+  {
     accessorKey: 'classId',
     header: 'Class',
     cell: ({ row }) => {
@@ -59,7 +58,7 @@ export const getColumns = (classes: Class[]): ColumnDef<Student>[] => [
       return <span>{className}</span>;
     },
     filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id));
+      return value === row.getValue(id);
     },
   },
   {
@@ -93,12 +92,12 @@ export const getColumns = (classes: Class[]): ColumnDef<Student>[] => [
       );
     },
   },
-    {
+  {
     accessorKey: 'activitiesCompleted',
     header: 'Activity',
     cell: ({ row }) => {
       const isCompleted = (row.original.activitiesCompleted || 0) > 0;
-       return isCompleted ? (
+      return isCompleted ? (
         <Badge variant="secondary">Completed</Badge>
       ) : (
         <Badge variant="outline">Not Completed</Badge>
@@ -134,10 +133,54 @@ export const getColumns = (classes: Class[]): ColumnDef<Student>[] => [
     },
   },
   {
-    id: 'actions',
+    id: 'remarks',
+    header: 'Remarks',
     cell: ({ row }) => {
       const student = row.original;
-      return <RecommendationsButton student={student} />;
+      const remarks: string[] = [];
+
+      // Check if student has zero progress on all variables
+      const hasNoActivity =
+        (!student.progress || student.progress === 0) &&
+        (!student.currentActivityScore || student.currentActivityScore === 0) &&
+        (!student.timePlayed || student.timePlayed === 0) &&
+        (!student.experimentsCompleted || student.experimentsCompleted === 0) &&
+        (!student.activitiesCompleted || student.activitiesCompleted === 0);
+
+      if (hasNoActivity) {
+        remarks.push("The student has not logged in yet");
+      } else {
+        // Check experiment progress (assuming 100% = complete)
+        if (student.progress < 100) {
+          remarks.push("The student did not do the pendulum oscillation 15 times");
+        }
+
+        // Check activity score
+        if (student.currentActivityScore > 10) {
+          remarks.push("This student has repeated the activity more than once");
+        } else if (student.currentActivityScore < 10 && student.currentActivityScore > 0) {
+          remarks.push("This student has not yet gained full mark on the activity");
+        }
+
+        // Check if both activities are incomplete
+        if ((student.experimentsCompleted || 0) < 1 && (student.activitiesCompleted || 0) < 1) {
+          remarks.push("This student has not completed both activities");
+        }
+      }
+
+      if (remarks.length === 0) {
+        return <span className="text-muted-foreground italic">No remarks</span>;
+      }
+
+      return (
+        <ul className="text-sm space-y-1">
+          {remarks.map((remark, index) => (
+            <li key={index} className="text-muted-foreground">
+              • {remark}
+            </li>
+          ))}
+        </ul>
+      );
     },
   },
 ];
