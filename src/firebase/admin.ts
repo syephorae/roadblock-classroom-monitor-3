@@ -20,9 +20,21 @@ export function initializeAdminApp() {
     };
   }
 
-  // Load service account from file
-  const serviceAccountPath = join(process.cwd(), 'studio-4099736194-7143c-firebase-adminsdk-fbsvc-1c09d7ebde.json');
-  const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
+  let serviceAccount;
+
+  // Try to load from environment variable first (for deployment)
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+    try {
+      serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    } catch (error) {
+      console.error('Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON:', error);
+      throw new Error('Invalid GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable');
+    }
+  } else {
+    // Fall back to local file (for development)
+    const serviceAccountPath = join(process.cwd(), 'studio-4099736194-7143c-firebase-adminsdk-fbsvc-1c09d7ebde.json');
+    serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
+  }
 
   // Initialize with service account credentials
   const firebaseApp = initializeApp({
