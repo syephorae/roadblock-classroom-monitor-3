@@ -17,7 +17,7 @@ export async function addClass(className: string, teacherId: string) {
     const newClass = {
       id: classRef.id,
       name: className.trim(),
-      description: '', 
+      description: '',
       teacherId: teacherId,
       studentIds: [], // Start with an empty array of student IDs
       normalizedName: className.trim().toLowerCase(),
@@ -41,7 +41,7 @@ export async function getRecommendations(input: PersonalizedRecommendationsInput
   } catch (error) {
     console.error(error);
     return { success: false, error: 'An unexpected error occurred.' };
-  } 
+  }
 }
 
 /**
@@ -134,10 +134,21 @@ export async function addStudentsToClass(studentNames: string[], classId: string
 
     // --- FIX 2: Atomically add all new and existing student IDs to the class document --- 
     if (studentIdsForClass.length > 0) {
-        console.log(`DEBUG: Updating class ${classId} with ${studentIdsForClass.length} student IDs.`);
-        batch.update(classRef, {
-            studentIds: FieldValue.arrayUnion(...studentIdsForClass)
+      console.log(`DEBUG: Updating class ${classId} with ${studentIdsForClass.length} student IDs.`);
+      batch.update(classRef, {
+        studentIds: FieldValue.arrayUnion(...studentIdsForClass)
+      });
+
+      // Also create teacher_students links so students appear in roster
+      const teacherStudentsCol = firestore.collection('teacher_students');
+      for (const studentId of studentIdsForClass) {
+        const linkRef = teacherStudentsCol.doc();
+        batch.set(linkRef, {
+          teacherId: teacherId,
+          studentId: studentId
         });
+      }
+      console.log(`DEBUG: Creating ${studentIdsForClass.length} teacher-student links.`);
     }
 
     console.log('DEBUG: Committing batch to Firestore.');
@@ -148,13 +159,14 @@ export async function addStudentsToClass(studentNames: string[], classId: string
 
     const successMessage = `Roster processed. Added ${newStudentsCount} new students and linked/verified ${studentIdsForClass.length} total students in the class.`;
     console.log('--- DEBUG: addStudentsToClass SUCCESS ---');
-    
+
     return { success: true, message: successMessage };
 
   } catch (error) {
     console.error('--- DEBUG: addStudentsToClass FAILED ---');
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
     console.error('Error Details:', error);
+    // probelm die sini tadi, lepas upload .. dia ada bgtau error line berapa?
     return { success: false, error: `Failed to process roster: ${errorMessage}` };
   }
 }

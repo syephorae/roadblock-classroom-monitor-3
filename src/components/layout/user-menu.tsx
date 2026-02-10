@@ -25,7 +25,7 @@ export function UserMenu() {
     await auth.signOut();
     router.push('/login');
   };
-  
+
   const getInitials = (name?: string | null) => {
     if (!name) return 'T';
     return name
@@ -55,12 +55,20 @@ export function UserMenu() {
               <span className="text-xs text-muted-foreground">
                 {user?.email ?? 'teacher@school.edu'}
               </span>
+              <span className="text-[10px] text-muted-foreground/70 font-mono mt-1">
+                ID: {user?.uid}
+              </span>
             </div>
           )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 mb-2" side="top" align="start">
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="flex-col items-start focus:bg-transparent">
+          <span className="text-xs text-muted-foreground">Teacher ID</span>
+          <code className="text-xs font-mono bg-muted p-1 rounded w-full">{user?.uid}</code>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />

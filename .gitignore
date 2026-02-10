@@ -8,6 +8,10 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 
+# Firebase service account (DO NOT COMMIT!)
+studio-4099736194-7143c-firebase-adminsdk-fbsvc-1c09d7ebde.json
+*.json
+
 # Environment variables
 .env
 .env.local

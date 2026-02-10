@@ -11,11 +11,6 @@ import {
 
 const navItems = [
   {
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    label: 'Dashboard',
-  },
-  {
     href: '/dashboard/students',
     icon: Users,
     label: 'Students',
@@ -24,6 +19,11 @@ const navItems = [
     href: '/dashboard/classes',
     icon: Library,
     label: 'Classes',
+  },
+  {
+    href: '/dashboard/debug',
+    icon: Library, // using generic icon for now
+    label: 'Debug',
   },
 ];
 
