@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 import { StudentsTable } from './students-table';
 
-// --- RosterStudentsTable component ---
+// --- RosterStudentsTable component (Refactored to fetch students by teacher's classes) ---
 
 interface RosterStudentsTableProps {
   studentIds?: string[] | undefined | null; // Optional prop
@@ -135,6 +135,7 @@ export function RosterStudentsTable({ studentIds }: RosterStudentsTableProps) {
         return;
       }
 
+      const teacherId = user.uid;
       setLoading(true);
       setError(null);
 
@@ -231,7 +232,6 @@ export function RosterStudentsTable({ studentIds }: RosterStudentsTableProps) {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
         setError(`Failed to load roster data: ${errorMessage}`);
       } finally {
-        console.log("--- DEBUG: Roster Table --- Fetch finished. ---");
         setLoading(false);
       }
     };
@@ -243,7 +243,7 @@ export function RosterStudentsTable({ studentIds }: RosterStudentsTableProps) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="mr-2 h-8 w-8 animate-spin" />
-        <span>Loading student roster...</span>
+        <span>Loading your students...</span>
       </div>
     );
   }
